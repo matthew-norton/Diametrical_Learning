@@ -1,8 +1,15 @@
 # SGD-based Diametrical Risk Minimization (DRM) in Pytorch
-This is an implementation of the SGD-DRM algorithm from the paper "Diametrical Risk Minimization: Theory and Computations", M. Norton and J. O. Royset. https://arxiv.org/abs/1910.10844. Experiments can be recreated by simply running the "run" scripts, depending on which experiment (network and dataset) you would like to reproduce. 
+This is an implementation of the SGD-DRM algorithm from the paper "Diametrical Risk Minimization: Theory and Computations", M. Norton and J. O. Royset. https://arxiv.org/abs/1910.10844. 
 
+### How to run? 
+After cloning the repository, the experiments from the paper can be recreated by simply going to the command line and running:
 
-The code is complex because DRM is not straightforward to implement with construction of the Pytorch library. A network needs to be made from custom layers (found in the "layers" module) which allow for random "shifts" to the parameters of each layer during the forward operations. 
+python run_(dataset)_(network).py path_to_put_downloaded_data
+
+where "run_(dataset)_(network).py" is one of the provided "run" files and "path_to_put_downloaded_data" is somewhere pytorch can download and put CIFAR10 and/or MNIST. The output will be two plots, one providing the progress of test accuracy during training and the other plotting the approximate distribution of neighborhood losses around the optimal solutions. 
+
+The code is set up to train two networks; one trained with DRM and the other with ERM. The "run" files walk through the necissary components of running a model. However, parts of the code can be easily customized to experiment with other architectures and variations of the training routine. 
+
 
 
 Requirements:
