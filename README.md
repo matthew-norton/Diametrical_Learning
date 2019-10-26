@@ -4,7 +4,7 @@ This is an implementation of the SGD-DRM algorithm from the paper "Diametrical R
 ### How to run? 
 After cloning the repository, the experiments from the paper can be recreated by simply going to the command line and running:
 
-python run_(dataset)_(network).py path_to_put_downloaded_data
+`python run_(dataset)_(network).py path_to_put_downloaded_data`
 
 where "run_(dataset)_(network).py" is one of the provided "run" files and "path_to_put_downloaded_data" is somewhere pytorch can download and put CIFAR10 and/or MNIST. The output will be two plots, one providing the progress of test accuracy during training and the other plotting the approximate distribution of neighborhood losses around the optimal solutions. 
 
