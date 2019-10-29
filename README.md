@@ -49,4 +49,4 @@ epoch = 1
 #This trains for one epoch.
 DRM_SGD_train(epoch,new_net,my_optimizer,train_loader,
                     num_dir=num_dir, gamma=g , sampling_interval=sampling_interval)
-``
+`
