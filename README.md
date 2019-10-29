@@ -40,13 +40,11 @@ Along with some useful performance tracking attributes, `Wrapper_Net` objects ma
 
 4) Use the train and test methods from `drm_train_test` module.
 
-`sampling_interval = 5
-num_dir=20
+`sampling_interval = 5`
+`num_dir=20`
 
-g = 1
-epoch = 1
+`g = 1`
+`epoch = 1`
 
-#This trains for one epoch.
-DRM_SGD_train(epoch,new_net,my_optimizer,train_loader,
-                    num_dir=num_dir, gamma=g , sampling_interval=sampling_interval)
-`
+`#This trains for one epoch.`
+`DRM_SGD_train(epoch,new_net,my_optimizer,train_loader,num_dir=num_dir, gamma=g,sampling_interval=sampling_interval)`
