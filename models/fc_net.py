@@ -2,23 +2,19 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from layers import Conv2d_Shift , Linear_Shift
-
-
-
 
 
 class Simple_Net(nn.Module):
     def __init__(self,num_classes=10,input_shape=(28,28)):
-        super(Simple_Net, self).__init__()
+        super(Simple_Net_Test, self).__init__()
 
         self.input_flat_size = int(np.prod(input_shape))
-        self.fc0 = Linear_Shift(self.input_flat_size, 320 , bias = False )
+        self.fc0 = nn.Linear(self.input_flat_size, 320 , bias = False )
 
-        self.fc1 = Linear_Shift(320, 320, bias = False)
-        self.fc2 = Linear_Shift(320, 200, bias = False)
+        self.fc1 = nn.Linear(320, 320, bias = False)
+        self.fc2 = nn.Linear(320, 200, bias = False)
 
-        self.fc3 = Linear_Shift(200, num_classes, bias = False)
+        self.fc3 = nn.Linear(200, num_classes, bias = False)
 
 
 

@@ -1,16 +1,5 @@
 # SGD-based Diametrical Risk Minimization (DRM) in Pytorch
-This is an implementation of the SGD-DRM algorithm from the paper "Diametrical Risk Minimization: Theory and Computations", M. Norton and J. O. Royset. https://arxiv.org/abs/1910.10844. 
-
-### How to run? 
-After cloning the repository, the experiments from the paper can be recreated by simply going to the command line and running:
-
-`python run_(dataset)_(network).py path_to_put_downloaded_data`
-
-where "run_(dataset)_(network).py" is one of the provided "run" files and "path_to_put_downloaded_data" is somewhere pytorch can download and put CIFAR10 and/or MNIST. The output will be two plots, one providing the progress of test accuracy during training and the other plotting the approximate distribution of neighborhood losses around the optimal solutions. 
-
-The code is set up to train two networks; one trained with DRM and the other with ERM. The "run" files walk through the necissary components of running a model. However, parts of the code can be easily customized to experiment with other architectures and variations of the training routine. 
-
-
+This is an implementation of the SGD-DRM algorithm from paper [1] : "Diametrical Risk Minimization: Theory and Computations", M. Norton and J. O. Royset. https://arxiv.org/abs/1910.10844.
 
 Requirements:
 
@@ -19,37 +8,45 @@ Requirements:
 - torchvision 0.4+
 - numpy 1.17+
 - matplotlib 3.1.1+ (for utils.plot_net )
-- seaborn 0.9+ (for diametric.sample_neighborhood_losses)
-- pandas 0.25+ (for diametric.sample_neighborhood_losses)
+- seaborn 0.9+ (for drm_train_test.sample_neighborhood_losses)
+- pandas 0.25+ (for drm_train_test.sample_neighborhood_losses)
+
+### Quick Start: How to recreate experiments from [1]?
+After cloning this repository, you can recreate experiments from paper [1] by simply executing one of the scripts "run_CIFAR10_FC.py" , "run_CIFAR10_resnet20.py", or "run_MNIST_FC.py" The scripts can be run as-is via the command line and only require a single command line argument as follows:
+
+`python run_(dataset)_(network).py path_to_put_downloaded_data`
+
+where "path_to_put_downloaded_data" is somewhere pytorch can download and put the CIFAR10 and/or MNIST datasets. The output will be two plots, one providing the progress of test accuracy during training and the other plotting the approximate distribution of neighborhood losses around the optimal solutions. NOTE: Execution can take quite a while and one should utilize the options in the script for saving intermediate network parameters and performance statistics.
 
 
-Organization of Modules:
+## Implementation details:
+To train your own custom network via SGD-DRM, the steps below provide a quick guide. Full examples can be found in the "run" files mentioned above.
 
-models
-  - Simple_Net
-  - resnet20 
-  - DRM_net
+1)  Create your network as a standard pytorch object (see pytorch tutorials). We will call this the "core_network."  
 
-layers
-  - DRM compatible Linear and Conv2d layers
+`my_core_network = My_Net().to(device)`
 
+Note that all parameters need to be named. This will happen automatically if you follow standard pytorch conventions. You can check this by printing all of your named parameters: `print([name for name in my_core_network.named_parameters()])`
 
-fast_random
-  - MultithreadedRNG class for fast parallel sampling of random directions.
+2)  Wrap the "core_network" in a `Wrapper_Net`
 
+`new_net = Wrapper_Net(core_network=my_core_network)`
 
-utils
-  - save_nets
-  - load_nets
-  - plot_net
+Along with some useful performance tracking attributes, `Wrapper_Net` objects make the network compatible with SGD-DRM. First, when initialized, the object initializes multithreaded random number generators for each layer of the network. This helps for fast sampling during SGD-DRM. Second, it has an `assess` function which calculates the loss value for `num_dir` random points in a `gamma` neighborhood. Third, it has a special forward function to calculate the maximum loss over the finite set V (see paper).
 
-datastore
-  - Data loading classes and functions
+3) Create an optimizer to keep track of gradients
 
+`my_optimizer = optim.SGD(new_net.parameters() ,momentum=0 ,lr=.01)`
 
-diametrical
-  - build_net 
-  - assess
-  - train
-  - test
-  - sample_neighborhood
+4) Use the train and test methods from `drm_train_test` module.
+
+`sampling_interval = 5
+num_dir=20
+
+g = 1
+epoch = 1
+
+#This trains for one epoch.
+DRM_SGD_train(epoch,new_net,my_optimizer,train_loader,
+                    num_dir=num_dir, gamma=g , sampling_interval=sampling_interval)
+``

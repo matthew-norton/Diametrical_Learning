@@ -9,62 +9,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-#############################################################################################
-'''Assess loss over batch "x" for
-"num_dir" random points within a "gamma"
-neighborhood of the current point'''
-#############################################################################################
 
-def assess(net,x ,target, seed=0, num_dir = 10 , gamma = 2 , return_v = False , return_all_losses=False):
-    losses = []
-    pert_v = {}
-
-    rng_dict = net.rng_dict
-
-    with torch.no_grad():
-        np.random.seed(seed)
-        for k_ in range(num_dir):
-            for name,module in net.named_modules():
-                if isinstance(module , (Linear_Shift, Conv2d_Shift)):
-                    pert_v[name] = {'weight' : 0 ,
-                                  'bias' : 0 }
-
-                    pert_v[name]['weight'] = rng_dict[name]['weight'].fill().to(net.device)
-
-                    pert_v[name]['weight'] *= gamma /torch.norm(pert_v[name]['weight'])
-
-                    module.weight_shift = pert_v[name]['weight']
-
-                    pert_v[name]['bias'] = torch.tensor(0,device=net.device)
-                    if module.bias is not None:
-
-                        pert_v[name]['bias'] = rng_dict[name]['bias'].fill().to(net.device)
-
-                        pert_v[name]['bias'] *= gamma/torch.norm(pert_v[name]['bias'])
-
-                        module.bias_shift = pert_v[name]['bias']
-
-            loss = net(x , target = target , train = False , return_probs=False)
-            losses.append([ loss , pert_v ])
-
-
-        for name,module in net.named_modules():
-            if name in pert_v.keys():
-                module.weight_shift = torch.tensor(0,device=net.device)
-                module.bias_shift = torch.tensor(0,device=net.device)
-
-
-        losses = np.array(losses)
-
-        if return_all_losses:
-            return losses[:,0]
-
-        elif return_v:
-            idx = np.argmax(np.array(losses)[:,0])
-            return losses[idx,1]
-
-        else:
-            return losses
 #############################################################################################
 '''TRAIN AND TEST ROUTINES'''
 #############################################################################################
@@ -75,6 +20,7 @@ def DRM_SGD_train(epoch,
        network,
        optimizer,
        train_loader,
+       num_dir = 20
        gamma = 0,
        log_interval = 10,
        sampling_interval = 5
@@ -89,7 +35,8 @@ def DRM_SGD_train(epoch,
 
         if batch_idx%sampling_interval==0:
             #s=time.time()
-            v_new = assess(network,data ,target, seed=epoch*batch_idx, num_dir = network.num_dir , gamma = gamma , return_v = True)
+            v_new = network.assess(data ,target, seed=epoch*batch_idx,
+                                    num_dir = num_dir , gamma = gamma , return_v = True)
             network.v.append(v_new)
             #print('assess time: ' , time.time() - s)
 
@@ -208,21 +155,14 @@ def sample_neighborhood_losses(network1,network2,
 
         for batch_idx , (data , target) in enumerate(train_loader):
             with torch.no_grad():
-                data = data.to(network1.device)
-                target = target.to(network1.device)
+                data = data.to(net.device)
+                target = target.to(net.device)
 
 
-                network1.rng_dict = { name :  { 'weight' : MultithreadedRNG(module.weight.shape, seed=0 , threads = 8) ,
-                      'bias' : MultithreadedRNG(module.bias.shape, seed=0 , threads = 2) if module.bias is not None else 0 }
-                    for name , module in network1.named_modules() if isinstance(module , (Linear_Shift, Conv2d_Shift)) }
-
-                network2.rng_dict = { name :  { 'weight' : MultithreadedRNG(module.weight.shape, seed=0 , threads = 8) ,
-                                  'bias' : MultithreadedRNG(module.bias.shape, seed=0 , threads = 2) if module.bias is not None else 0 }
-                    for name , module in network2.named_modules() if isinstance(module , (Linear_Shift, Conv2d_Shift)) }
+                net.rng_dict = { name :   MultithreadedRNG(param.shape, seed=0 , threads = 2)  for name , param in net.named_parameters()  }
 
 
-
-                losses = assess(net,data,target , num_dir = num_dir , gamma = gamma, return_v=False, return_all_losses=True)
+                losses = net.assess(data,target , num_dir = num_dir , gamma = gamma, return_v=False, return_all_losses=True)
 
                 if batch_idx==0:
                     base_loss[net_name] =  net(data,target=target,train=False,return_probs=False)*(len(target)/len(train_loader.dataset))

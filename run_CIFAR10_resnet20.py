@@ -56,31 +56,34 @@ v_max_len: number of past vectors to keep in set V (see algorithm in paper)
 lr_schedule: if we want to change the learning rate (i.e. step size for gradient steps) over the course of the algorithm
 gamma_schedule: "gamma" used for sampling set U. Allows to change the size of the neighborhood over which we sample num_dir points over the course of the algorithm
 '''
-from models.DRM_net import DRM_Net
+from models.wrap_net import Wrapper_Net
 from models.fc_net import Simple_Net
 from models.resnet import resnet20
 
-num_dir=20
 v_max_len = 1
-sampling_interval = 5
-num_epochs =801
-lr_schedule = dict([ (0,.01) , (750,.001)] )
-gamma_schedule = dict( [(0,1) ] )
+exclude_re = ['bn'] #exclude batch normalization layers from parameter pertrubation. It's very unstable.
 
 core_network1 = resnet20(num_classes=num_classes)
-drm_network = DRM_Net(core_network=core_network1 , v_max_len = v_max_len ,sampling_workers=4 , num_dir=num_dir , device = device).to(device)
+drm_network = Wrapper_Net(core_network=core_network1 , v_max_len = v_max_len ,
+                        sampling_workers=4 , exclude_re = exclude_re,device = device).to(device)
 
 core_network2 = resnet20(num_classes=num_classes)
-erm_network = DRM_Net(core_network=core_network2 ,sampling_workers=2, device = device).to(device)
+erm_network = Wrapper_Net(core_network=core_network2 ,sampling_workers=2, device = device).to(device)
 
 
 #############################################################################################
 '''TRAIN CLASSIFIERS'''
 #############################################################################################
 from utils import save_nets , plot_net
-from diametrical import DRM_SGD_train , ERM_SGD_train , test , sample_neighborhood_losses
+from drm_train_test import DRM_SGD_train , ERM_SGD_train , test , sample_neighborhood_losses
 import torch.optim as optim
 
+sampling_interval = 5
+num_dir=20
+
+num_epochs =801
+lr_schedule = dict([ (0,.01) , (750,.001)] )
+gamma_schedule = dict( [(0,1) ] )
 
 test(drm_network,test_loader)
 test(erm_network,test_loader)
@@ -101,7 +104,7 @@ for epoch in range(num_epochs):
 
     #For the first network, we train using DRM (i.e. using the DRM_SGD_train function)
     DRM_SGD_train(epoch,drm_network,optimizer_drm,train_loader,
-                    gamma=g , sampling_interval=sampling_interval)
+                    num_dir=num_dir, gamma=g , sampling_interval=sampling_interval)
 
     #For the second network, we train using regular ERM objective with SGD with the SGD_train function
     ERM_SGD_train(epoch,erm_network,optimizer_erm,train_loader)
