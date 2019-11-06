@@ -20,7 +20,7 @@ where "path_to_put_downloaded_data" is somewhere pytorch can download and put th
 
 
 ## Implementation details:
-To train your own custom network via SGD-DRM, the steps below provide a quick guide. Full examples can be found in the "run" files mentioned above.
+To train your own custom network via SGD-DRM, the steps below provide a quick guide. Full examples can be found in the "run" files mentioned above. NOTE: The current implementation is set up to perform classification with NLL loss function. Changes to the loss function and network output should be addressed in the Wrapper_Net.regular_forward method (in the models.wrap_net module), as well as the train and test functions found in the drm_train_test module.
 
 1)  Create your network as a standard pytorch object (see pytorch tutorials). We will call this the "core_network."  
 

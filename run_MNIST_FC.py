@@ -44,17 +44,14 @@ train_loader, test_loader = get_MNIST(path,
 #############################################################################################
 '''BUILD CLASSIFIERS'''
 #############################################################################################
-'''We wrap the "core network" inside of a DRM_Net object. This object does a few things:
+'''We wrap the "core network" inside of a Wrapper_Net object. This object does a few things:
 1) It allows the network to be trained with Diametrical Risk Minimization (i.e. the DRM_SGD_train function).
 2) It has a lot of attributes that keep track of the networks performance stats as training progresses.
 So even if you don't train with DRM_SGD_train, it can be useful to wrap it in this to track stats.
 
-Note: When specifying the DRM_Net, we also specify the required params for performning DRM:
+Note: When specifying the Wrapper_Net, we also can specify a few params that are used in iterations of DRM:
 sampling_workers: number of threads used to perform sampling of random directions in DRM algorithm.
-num_dir: number of random directions to sample. (i.e. size of set U in SGD-DRM algorithm in paper). Frequency of sampling (how often) is given by parameter "sampling_interval" which is specified below.
-v_max_len: number of past vectors to keep in set V (see algorithm in paper)
-lr_schedule: if we want to change the learning rate (i.e. step size for gradient steps) over the course of the algorithm
-gamma_schedule: "gamma" used for sampling set U. Allows to change the size of the neighborhood over which we sample num_dir points over the course of the algorithm
+v_max_len: number of past vectors to keep in set V (see algorithm in paper [1])
 '''
 from models.wrap_net import Wrapper_Net
 from models.fc_net import Simple_Net
@@ -72,6 +69,18 @@ erm_network = Wrapper_Net(core_network=core_network2 ,sampling_workers=2, device
 #############################################################################################
 '''TRAIN CLASSIFIERS'''
 #############################################################################################
+''' We train the same architectures (the erm_network and drm_network) using two different optimization schemes.
+One trained with SGD-DRM and the other trained with SGD-ERM. For both, we specify and learning rate schedule (lr_schedule),
+the number of epochs to train for (num_epochs), and use the torch.optim library to set up an "optimizer" which will keep track of
+gradients and take our gradient steps with the assigned learning rates.
+
+For training with SGD-DRM, we also specifiy some extra parameters required for the algorithm:
+gamma_schedule: size of neighborhood to sample (see "gamma" used for sampling set U in paper [1]).
+                Allows to change the size of the neighborhood over which we sample num_dir points over
+                the course of the algorithm.
+num_dir: number of random directions to sample. (i.e. size of set U in SGD-DRM algorithm in the paper).
+sampling_interval: How many batches to wait until re-sampling num_dir points in the gamma neighborhood.
+'''
 from utils import save_nets , plot_net
 from drm_train_test import DRM_SGD_train , ERM_SGD_train , test , sample_neighborhood_losses
 import torch.optim as optim
@@ -131,5 +140,5 @@ plot_net([(drm_network,'DRM') , (erm_network,'ERM') ] )
 '''Sample points in neighborhood of optimal solution and plot the distribution of losses'''
 #############################################################################################
 
-
-sample_neighborhood_losses(drm_network,erm_network,train_loader, num_dir = 10000 , gamma = 10)
+'''Note: To recreate the experiments in the paper, change num_dir to 10000. This may take a long time to run. '''
+sample_neighborhood_losses(drm_network,erm_network,train_loader, num_dir = 100 , gamma = 10)
